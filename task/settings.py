@@ -10,10 +10,9 @@ CONFIG_PATH = os.getenv("CONFIG_PATH", None)
 class Settings:
     service_host: str
     service_port: str
+    auth_service_host: str
+    auth_service_port: str
     database_path: str
-    jwt_secret: str
-    jwt_expiration_time: int
-    jwt_algorithm: str
     log_level: int
     log_turn_on_file_handler: bool
     log_filepath: str
@@ -25,16 +24,12 @@ def parse_config(filepath: str) -> Settings:
     config = configparser.ConfigParser()
     config.read(filepath)
 
-    database_section = config["Database"]
-    jwt_section = config["JWT"]
-
     return Settings(
         service_host=config.get("SERVICE", "host"),
         service_port=config.getint("SERVICE", "port"),
-        database_path=database_section["path"],
-        jwt_secret=jwt_section["secret"],
-        jwt_expiration_time=int(jwt_section["expiration_time"]),
-        jwt_algorithm=jwt_section["algorithm"],
+        auth_service_host=config.get("AUTH_SERVICE", "host"),
+        auth_service_port=config.getint("AUTH_SERVICE", "port"),
+        database_path=config.get("Database", "path"),
         log_level=config.getint("LOGGER", "level"),
         log_turn_on_file_handler=config.getboolean("LOGGER", "turn_on_file_handler"),
         log_filepath=config.get("LOGGER", "filepath"),

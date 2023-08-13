@@ -4,12 +4,24 @@ from pydantic import BaseModel
 
 class UserRole(str, Enum):
     ADMIN = "admin"
-    WORKER = "worker"
     MANAGER = "manager"
+    WORKER = "worker"
 
 
 class User(BaseModel):
-    id: int
+    public_id: int
     email: str
     role: UserRole
     name: str
+
+
+class TaskState(str, Enum):
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+
+
+class Task(BaseModel):
+    public_id: int
+    description: str
+    state: TaskState
+    processing_user: User

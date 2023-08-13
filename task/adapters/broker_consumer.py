@@ -2,9 +2,15 @@ import json
 from aiokafka import AIOKafkaConsumer
 from settings import settings
 from commands.process_user_created import process_user_created
+from commands.process_user_updated import process_user_updated
+from commands.process_user_deleted import process_user_deleted
 from utils.logger import LOG
 
-EVENT_PROCESSORS = {("account_streaming", "UserCreated"): process_user_created}
+EVENT_PROCESSORS = {
+    ("account_streaming", "UserCreated"): process_user_created,
+    ("account_streaming", "UserRoleUpdated"): process_user_updated,
+    ("account_streaming", "UserDeleted"): process_user_deleted,
+}
 
 
 class KafkaConsumerAsync:
