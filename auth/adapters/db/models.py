@@ -19,7 +19,7 @@ class UserRole(str, Enum):
 class User(BaseModel):
     id = AutoField(primary_key=True)
     email = CharField(max_length=255)
-    name = CharField(max_length=255)
+    name = CharField(max_length=255, unique=True)
     role = CharField(
         max_length=50, choices=[(role.value, role.name) for role in UserRole]
     )
