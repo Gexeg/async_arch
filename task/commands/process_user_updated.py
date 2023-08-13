@@ -2,7 +2,7 @@ from adapters.db.models import User
 from utils.logger import LOG
 
 
-async def process_user_created(user_data: dict):
+async def process_user_updated(user_data: dict):
     if (
         not user_data.get("public_id")
         or not user_data.get("name")
@@ -12,9 +12,6 @@ async def process_user_created(user_data: dict):
         LOG.error("Wrong user data %s", user_data)
         return
 
-    User.insert(
-        public_id=user_data["public_id"],
+    User.update(
         role=user_data["role"],
-        name=user_data["name"],
-        email=user_data["email"],
-    ).on_conflict("replace").execute()
+    ).where(User.public_id == user_data["public_id"]).execute()

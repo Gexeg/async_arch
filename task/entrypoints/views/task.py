@@ -1,73 +1,38 @@
+import asyncio
 from fastapi import FastAPI, Depends, HTTPException, Body, status
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
-from domain.models import UserRole, User
-from commands.register_user import register_user
-from commands.create_token import create_token
-from commands.get_user_by_token import get_user_by_token
-from commands.update_user import update_user_role
+from domain.models import User, Task
+from adapters.auth_client import AuthService
+from commands.create_task import create_new_task
+from commands.complete_task import complete_task
+from commands.get_user_tasks import get_user_task
+from commands.assign_tasks import assign_tasks
+from adapters.broker_consumer import consumer
 
 
 app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-class CreateUserRequest(BaseModel):
-    name: str
-    email: str
-    password: str
-    role: UserRole = UserRole.ADMIN
+@app.on_event("startup")
+async def startup_event():
+    await consumer.start()
+    asyncio.create_task(consumer.consume())
 
 
-@app.post("/super_secret_route/add_user")
-async def add_new_user(create_user_data: CreateUserRequest = Body(...)):
-    new_user = await register_user(**create_user_data.model_dump())
-    if new_user is None:
-        raise HTTPException(
-            status_code=400, detail="User with this name already registered"
-        )
-    return new_user.model_dump()
+@app.on_event("shutdown")
+async def shutdown_event():
+    await consumer.stop()
 
 
-class UpdateUserRequest(BaseModel):
-    name: str
-    email: str
-    password: str
-    role: UserRole = UserRole.ADMIN
+class CreateTaskRequest(BaseModel):
+    description: str
 
 
-@app.put("/super_secret_route/update_user", response_model=User)
-async def update_user(user_id: str, new_role: UserRole):
-    user = await update_user_role(user_id, new_role)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Could not find user by id",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    return user
-
-
-class UserAuthN(BaseModel):
-    name: str
-    password: str
-
-
-@app.post("/token")
-async def get_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    access_token = await create_token(form_data.username, form_data.password)
-    if not access_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    return {"access_token": access_token, "token_type": "bearer"}
-
-
-@app.post("/get_user", response_model=User)
-async def get_token(token: str = Depends(oauth2_scheme)):
-    user = await get_user_by_token(token)
+async def get_user_data(token: str = Depends(oauth2_scheme)):
+    auth_client = AuthService()
+    user = await auth_client.get_user_by_token(token)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -75,3 +40,42 @@ async def get_token(token: str = Depends(oauth2_scheme)):
             headers={"WWW-Authenticate": "Bearer"},
         )
     return user
+
+
+@app.post("/create_task", response_model=Task)
+async def create_task(
+    user: User = Depends(get_user_data), task_data: CreateTaskRequest = Body(...)
+):
+    new_task = await create_new_task(user, task_data.description)
+    if new_task is None:
+        raise HTTPException(status_code=400, detail="Something went wrong")
+    return new_task
+
+
+@app.put("/complete_task", response_model=Task)
+async def create_task(user: User = Depends(get_user_data), task_id: str = Body(...)):
+    task = await complete_task(user, task_id)
+    if task is None:
+        raise HTTPException(status_code=400, detail="Something went wrong")
+    return task
+
+
+@app.get("/get_my_tasks")
+async def create_task(user: User = Depends(get_user_data)):
+    task = await get_user_task(user)
+    if task is None:
+        raise HTTPException(status_code=400, detail="Something went wrong")
+    return task
+
+
+@app.get("/get_my_tasks")
+async def create_task(user: User = Depends(get_user_data)):
+    task = await get_user_task(user)
+    if task is None:
+        raise HTTPException(status_code=400, detail="Something went wrong")
+    return task
+
+
+@app.get("/assign_tasks")
+async def create_task(user: User = Depends(get_user_data)):
+    await assign_tasks(user)

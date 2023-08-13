@@ -4,23 +4,15 @@ from typing import Optional
 from adapters.brocker_producer import produce_event
 
 
-async def update_user_role(id: str, role: str) -> Optional[DomainUser]:
+async def delete_user(public_id: str) -> None:
     try:
-        user: DBUser = DBUser.get(DBUser.id == id)
-        if role != user.role:
-            user.role = role
-            user.save()
-
+        user: DBUser = DBUser.delete().where(DBUser.id == id).execute
         await produce_event(
             {
-                "event": "UserRoleUpdated",
-                "data": {"role": role},
+                "event": "UserDeleted",
+                "data": {"public_id": public_id},
             },
             "account_streaming",
-        )
-
-        return DomainUser(
-            public_id=user.id, name=user.name, email=user.email, role=user.role
         )
     except DBUser.DoesNotExist:
         return
