@@ -9,10 +9,13 @@ from commands.complete_task import complete_task
 from commands.get_user_tasks import get_user_task
 from commands.assign_tasks import assign_tasks
 from adapters.broker_consumer import consumer
+from settings import settings
 
 
 app = FastAPI()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl=f"http:{settings.auth_service_host}:{settings.auth_service_port}/token"
+)
 
 
 @app.on_event("startup")
@@ -61,15 +64,7 @@ async def create_task(user: User = Depends(get_user_data), task_id: str = Body(.
 
 
 @app.get("/get_my_tasks")
-async def create_task(user: User = Depends(get_user_data)):
-    task = await get_user_task(user)
-    if task is None:
-        raise HTTPException(status_code=400, detail="Something went wrong")
-    return task
-
-
-@app.get("/get_my_tasks")
-async def create_task(user: User = Depends(get_user_data)):
+async def get_my_tasks(user: User = Depends(get_user_data)):
     task = await get_user_task(user)
     if task is None:
         raise HTTPException(status_code=400, detail="Something went wrong")
@@ -77,5 +72,5 @@ async def create_task(user: User = Depends(get_user_data)):
 
 
 @app.get("/assign_tasks")
-async def create_task(user: User = Depends(get_user_data)):
+async def assign_tasks(user: User = Depends(get_user_data)):
     await assign_tasks(user)
