@@ -22,6 +22,7 @@ class TaskState(str, Enum):
 
 class Task(BaseModel):
     public_id: int
+    title: str
     description: str
     state: TaskState
     processing_user: User

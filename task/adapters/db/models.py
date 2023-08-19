@@ -25,6 +25,7 @@ class TaskState(str, Enum):
 
 class Task(BaseModel):
     id = AutoField(primary_key=True)
+    title = CharField(max_length=255, null=True)
     description = CharField(max_length=255)
     state = CharField(
         max_length=255,

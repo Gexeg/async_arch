@@ -6,8 +6,8 @@ from adapters.db.models import User as DBUser, Task as DBTask
 from utils.log_singleton import LOG
 from adapters.broker_producer import produce_event
 from adapters.db.db_init import database
-from schema_registry.validators.v1.task.CUD.task_updated import CUDMessageTaskUpdated
-from schema_registry.validators.v1.task.Business.task_asigned import (
+from schema_registry.validators.v2.task.CUD.task_updated import CUDMessageTaskUpdated
+from schema_registry.validators.v2.task.Business.task_assigned import (
     BEMessageTaskAssigned,
 )
 
@@ -25,20 +25,21 @@ async def assign_tasks(user: DomainUser):
         if not workers:
             return
         for task in DBTask.select().where(DBTask.state != TaskState.COMPLETED):
-            task_worker = choice(workers)
+            task_worker: DBUser = choice(workers)
             task.processing_user = task_worker.id
             task.save()
             events.append((task_worker, task))
     for worker, task in events:
         domain_task = DomainTask(
+            title=task.title,
             description=task.description,
             public_id=task.id,
             state=task.state,
             processing_user=DomainUser(
-                public_id=task.public_id,
-                name=task.name,
-                email=task.email,
-                role=task.role,
+                public_id=task_worker.public_id,
+                name=task_worker.name,
+                email=task_worker.email,
+                role=task_worker.role,
             ),
         )
 
