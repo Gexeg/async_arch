@@ -1,8 +1,15 @@
 from typing import Optional
+import uuid
+import datetime
+
 from domain.models import User as DomainUser, Task as DomainTask, TaskState
 from adapters.db.models import User as DBUser, Task as DBTask
-from utils.logger import LOG
+from utils.log_singleton import LOG
 from adapters.broker_producer import produce_event
+from schema_registry.validators.v1.task.CUD.task_updated import CUDMessageTaskUpdated
+from schema_registry.validators.v1.task.Business.task_completed import (
+    BEMessageTaskCompleted,
+)
 
 
 async def complete_task(user: DomainUser, task_id: str) -> Optional[DomainTask]:
@@ -26,21 +33,37 @@ async def complete_task(user: DomainUser, task_id: str) -> Optional[DomainTask]:
             ),
         )
 
-        await produce_event(
-            {
-                "event": "TaskCompleted",
-                "data": domain_task.model_dump(),
-            },
-            "task_streaming",
-        )
+        task_updated_message = {
+            "event_id": str(uuid.uuid4()),
+            "event_version": 1,
+            "event_name": "TaskUpdated",
+            "event_type": "CUD",
+            "producer": "task_service",
+            "event_time": datetime.datetime.now().isoformat(),
+            "event_data": domain_task.model_dump(),
+        }
+        task_updated_message_validator = CUDMessageTaskUpdated()
+        if task_updated_message_validator.validate(task_updated_message):
+            await produce_event(
+                task_updated_message,
+                "task_streaming",
+            )
 
-        await produce_event(
-            {
-                "event": "TaskCompleted",
-                "data": domain_task.model_dump(),
-            },
-            "task",
-        )
+        task_completed_message = {
+            "event_id": str(uuid.uuid4()),
+            "event_version": 1,
+            "event_name": "TaskCompleted",
+            "event_type": "Business",
+            "producer": "task_service",
+            "event_time": datetime.datetime.now().isoformat(),
+            "event_data": domain_task.model_dump(),
+        }
+        task_completed_message_validator = BEMessageTaskCompleted()
+        if task_completed_message_validator.validate(task_completed_message):
+            await produce_event(
+                task_completed_message,
+                "task",
+            )
         return domain_task
     except DBUser.DoesNotExist:
         LOG.info("Wrong task id")

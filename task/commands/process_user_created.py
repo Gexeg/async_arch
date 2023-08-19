@@ -1,16 +1,13 @@
 from adapters.db.models import User
-from utils.logger import LOG
+from utils.log_singleton import LOG
+from schema_registry.validators.v1.auth.CUD.user_created import CUDMessageUserCreated
 
 
-async def process_user_created(user_data: dict):
-    if (
-        not user_data.get("public_id")
-        or not user_data.get("name")
-        or not user_data.get("email")
-        or not user_data.get("role")
-    ):
-        LOG.error("Wrong user data %s", user_data)
+async def process_user_created(event_data: dict):
+    schema_validator = CUDMessageUserCreated()
+    if not schema_validator.validate(event_data):
         return
+    user_data = event_data["event_data"]
 
     User.insert(
         public_id=user_data["public_id"],

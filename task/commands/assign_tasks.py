@@ -1,9 +1,15 @@
+import uuid
+import datetime
 from random import choice
 from domain.models import User as DomainUser, Task as DomainTask, TaskState, UserRole
 from adapters.db.models import User as DBUser, Task as DBTask
-from utils.logger import LOG
+from utils.log_singleton import LOG
 from adapters.broker_producer import produce_event
 from adapters.db.db_init import database
+from schema_registry.validators.v1.task.CUD.task_updated import CUDMessageTaskUpdated
+from schema_registry.validators.v1.task.Business.task_asigned import (
+    BEMessageTaskAssigned,
+)
 
 
 async def assign_tasks(user: DomainUser):
@@ -35,18 +41,35 @@ async def assign_tasks(user: DomainUser):
                 role=task.role,
             ),
         )
-        await produce_event(
-            {
-                "event": "TaskUpdated",
-                "data": domain_task.model_dump(),
-            },
-            "task_streaming",
-        )
 
-        await produce_event(
-            {
-                "event": "TaskAssigned",
-                "data": domain_task.model_dump(),
-            },
-            "task",
-        )
+        task_updated_message = {
+            "event_id": str(uuid.uuid4()),
+            "event_version": 1,
+            "event_name": "TaskUpdated",
+            "event_type": "CUD",
+            "producer": "task_service",
+            "event_time": datetime.datetime.now().isoformat(),
+            "event_data": domain_task.model_dump(),
+        }
+        task_updated_message_validator = CUDMessageTaskUpdated()
+        if task_updated_message_validator.validate(task_updated_message):
+            await produce_event(
+                task_updated_message,
+                "task_streaming",
+            )
+
+        task_assigned_message = {
+            "event_id": str(uuid.uuid4()),
+            "event_version": 1,
+            "event_name": "TaskAssigned",
+            "event_type": "Business",
+            "producer": "task_service",
+            "event_time": datetime.datetime.now().isoformat(),
+            "event_data": domain_task.model_dump(),
+        }
+        task_assigned_message_validator = BEMessageTaskAssigned()
+        if task_assigned_message_validator.validate(task_assigned_message):
+            await produce_event(
+                task_assigned_message,
+                "task",
+            )

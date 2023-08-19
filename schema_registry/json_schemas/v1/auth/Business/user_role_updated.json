@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft/2020-12/schema#",
+  "$id": "http://example.com/schemas/event-schema.json",
+  "type": "object",
+  "properties": {
+    "event_meta": {
+      "type": "object",
+      "properties": {
+          "event_id": { "type": "string" },
+          "event_version": { "enum": [1] },
+          "event_name": { "type": "string" },
+          "event_type": { "type": "string" },
+          "producer": { "type": "string" },
+          "event_time": { "type": "string" }
+      }
+    },
+    "event_data": {
+      "type": "object",
+      "properties": {
+        "public_id": { "type": "integer" },
+        "role": { "enum": ["admin", "manager", "worker"] },
+      },
+      "required": ["public_id", "role"]
+    }
+  },
+  "required": ["event_id", "event_version", "event_name", "event_type", "producer", "event_time", "event_data"]
+}

@@ -18,6 +18,7 @@ class Settings:
     log_filepath: str
     broker_host: str
     broker_port: str
+    schema_registry_path: str
 
 
 def parse_config(filepath: str) -> Settings:
@@ -35,6 +36,7 @@ def parse_config(filepath: str) -> Settings:
         log_filepath=config.get("LOGGER", "filepath"),
         broker_host=config.get("Broker", "host"),
         broker_port=config.get("Broker", "port"),
+        schema_registry_path=config.get("SCHEMA_REGISTRY", "base_dir_path"),
     )
 
 

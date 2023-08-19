@@ -3,7 +3,7 @@ import httpx
 from domain.models import User
 from typing import Optional
 from settings import settings
-from utils.logger import LOG
+from utils.log_singleton import LOG
 
 
 class AuthService:

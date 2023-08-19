@@ -4,7 +4,7 @@ from settings import settings
 from commands.process_user_created import process_user_created
 from commands.process_user_updated import process_user_updated
 from commands.process_user_deleted import process_user_deleted
-from utils.logger import LOG
+from utils.log_singleton import LOG
 
 EVENT_PROCESSORS = {
     ("account_streaming", "UserCreated"): process_user_created,
@@ -41,7 +41,7 @@ class KafkaConsumerAsync:
             LOG.debug("Got event %s", message)
             message_data = message.value
             topic = message.topic
-            event = message_data["event"]
+            event = message_data["event_name"]
             processor = EVENT_PROCESSORS.get((topic, event))
             LOG.debug(
                 "Got processor %s by topic %s type %s and event %s",
@@ -51,7 +51,7 @@ class KafkaConsumerAsync:
                 event,
             )
             if processor:
-                await processor(message_data["data"])
+                await processor(message_data)
 
 
 consumer = KafkaConsumerAsync(topics=["account_streaming", "account"])

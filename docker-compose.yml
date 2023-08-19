@@ -9,6 +9,7 @@ services:
     container_name: auth_service
     volumes:
       - ./artefacts:/app/artefacts
+      - ./schema_registry:/app/schema_registry
     ports:
       - 8001:8001
     restart: always
@@ -24,6 +25,7 @@ services:
     container_name: task_service
     volumes:
       - ./artefacts:/app/artefacts
+      - ./schema_registry:/app/schema_registry
     ports:
       - 8011:8011
     restart: always

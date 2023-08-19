@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft/2020-12/schema#",
+  "$id": "http://example.com/schemas/event-schema.json",
+  "type": "object",
+  "properties": {
+    "event_id": { "type": "string" },
+    "event_version": { "enum": [1] },
+    "event_name": { "type": "string" },
+    "event_type": { "type": "string" },
+    "producer": { "type": "string" },
+    "event_time": { "type": "string" },
+    "event_data": {
+      "type": "object",
+      "properties": {
+        "public_id": { "type": "integer" },
+        "description": { "type": "string" },
+        "state": { "enum": ["PROCESSING", "COMPLETED"] },
+        "processing_user": {
+          "type": "object",
+          "properties": {
+              "public_id": { "type": "integer" },
+              "email": { "type": "string" },
+              "role": { "enum": ["admin", "manager", "worker"] },
+              "name": { "type": "string" }
+          },
+          "required": ["public_id", "email", "role", "name"]
+        }
+      },
+      "required": ["public_id", "description", "state", "processing_user"]
+    }
+  },
+  "required": ["event_id", "event_version", "event_name", "event_type", "producer", "event_time", "event_data"]
+}
