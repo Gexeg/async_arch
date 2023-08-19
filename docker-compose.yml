@@ -34,6 +34,24 @@ services:
     networks:
       - async_arch_network
 
+  billing:
+    build:
+      context: billing
+    user: "1000:1000"
+    environment:
+      CONFIG_PATH: /app/config/local.ini
+    container_name: billing_service
+    volumes:
+      - ./artefacts:/app/artefacts
+      - ./schema_registry:/app/schema_registry
+    ports:
+      - 8031:8031
+    restart: always
+    depends_on:
+      - redpanda
+    networks:
+      - async_arch_network
+
   redpanda:
     command:
       - redpanda
