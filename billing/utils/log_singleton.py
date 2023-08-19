@@ -3,7 +3,7 @@ from settings import settings
 from logging import FileHandler, Formatter, StreamHandler, getLogger
 
 
-LOG = getLogger("auth")
+LOG = getLogger("billing")
 LOG.setLevel(settings.log_level)
 
 formatter = Formatter("%(asctime)-23s | %(name)-23s | %(levelname)-8s | %(message)s")
