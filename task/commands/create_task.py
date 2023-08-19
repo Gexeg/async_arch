@@ -6,14 +6,18 @@ from domain.models import User as DomainUser, Task as DomainTask, UserRole
 from adapters.db.models import User as DBUser, Task as DBTask
 from utils.log_singleton import LOG
 from adapters.broker_producer import produce_event
-from schema_registry.validators.v1.task.CUD.task_created import CUDMessageTaskCreated
-from schema_registry.validators.v1.task.Business.task_asigned import (
+from schema_registry.validators.v2.task.CUD.task_created import CUDMessageTaskCreated
+from schema_registry.validators.v2.task.Business.task_assigned import (
     BEMessageTaskAssigned,
 )
 
+def get_task_title(description: str):
+    # Тут должна быть регулярка
+    return "Awesome title"
+
 
 async def create_new_task(
-    user: DomainUser, task_description: str
+    user: DomainUser, task_description: str, task_title: str = None
 ) -> Optional[DomainTask]:
     if user.role == UserRole.WORKER:
         LOG.warning("worker can't create tasks")
@@ -24,12 +28,15 @@ async def create_new_task(
     if not workers:
         LOG.warning("Could not find workers to assign to the task")
         return
+    if not task_title:
+        task_title = get_task_title(task_description)
 
     chosen_one: DBUser = choice(workers)
     new_task = DBTask.create(
-        description=task_description, processing_user=chosen_one.id
+        title=task_title, description=task_description, processing_user=chosen_one.id
     )
     domain_task = DomainTask(
+        title=new_task.title,
         description=new_task.description,
         public_id=new_task.id,
         state=new_task.state,

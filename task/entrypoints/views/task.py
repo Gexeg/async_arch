@@ -55,9 +55,15 @@ async def create_task(
     return new_task
 
 
-@app.put("/complete_task", response_model=Task)
-async def create_task(user: User = Depends(get_user_data), task_id: str = Body(...)):
-    task = await complete_task(user, task_id)
+class CompleteTaskRequest(BaseModel):
+    task_id: int
+
+
+@app.post("/complete_task", response_model=Task)
+async def complete_the_task(
+    user: User = Depends(get_user_data), task_request: CompleteTaskRequest = Body(...)
+):
+    task = await complete_task(user, task_request.task_id)
     if task is None:
         raise HTTPException(status_code=400, detail="Something went wrong")
     return task
@@ -72,5 +78,5 @@ async def get_my_tasks(user: User = Depends(get_user_data)):
 
 
 @app.get("/assign_tasks")
-async def assign_tasks(user: User = Depends(get_user_data)):
+async def reassign_tasks(user: User = Depends(get_user_data)):
     await assign_tasks(user)

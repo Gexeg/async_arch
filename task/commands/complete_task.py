@@ -6,22 +6,24 @@ from domain.models import User as DomainUser, Task as DomainTask, TaskState
 from adapters.db.models import User as DBUser, Task as DBTask
 from utils.log_singleton import LOG
 from adapters.broker_producer import produce_event
-from schema_registry.validators.v1.task.CUD.task_updated import CUDMessageTaskUpdated
-from schema_registry.validators.v1.task.Business.task_completed import (
+from schema_registry.validators.v2.task.CUD.task_updated import CUDMessageTaskUpdated
+from schema_registry.validators.v2.task.Business.task_completed import (
     BEMessageTaskCompleted,
 )
 
 
 async def complete_task(user: DomainUser, task_id: str) -> Optional[DomainTask]:
     try:
+        user = DBUser.get(DBUser.public_id == user.public_id)
         task = DBTask.select().join(DBUser).where(DBTask.id == task_id).get()
-        if task.processing_user != user:
+        if int(task.processing_user_id) != int(user.id):
             LOG.info("Only task worker can complete task")
             return
         task.state = TaskState.COMPLETED
         task.save()
 
         domain_task = DomainTask(
+            title=task.title,
             description=task.description,
             public_id=task.id,
             state=task.state,
