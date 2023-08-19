@@ -7,7 +7,7 @@ from utils.log_singleton import LOG
 from adapters.broker_producer import produce_event
 from adapters.db.db_init import database
 from schema_registry.validators.v2.task.CUD.task_updated import CUDMessageTaskUpdated
-from schema_registry.validators.v2.task.Business.task_asigned import (
+from schema_registry.validators.v2.task.Business.task_assigned import (
     BEMessageTaskAssigned,
 )
 
